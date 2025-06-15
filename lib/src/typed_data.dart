@@ -11,6 +11,16 @@ part 'models.dart';
 part 'typed_data.freezed.dart';
 part 'typed_data.g.dart';
 
+/// Hashes typed data according to EIP-712 specification.
+///
+/// This function implements the core hashing algorithm defined in EIP-712 for
+/// structured typed data. It combines the domain separator and message data
+/// using the specified version of the EIP-712 standard.
+///
+/// [typedData] The typed message data containing domain and message information
+/// [version] The version of EIP-712 standard to use (v3 or v4)
+///
+/// Returns a [Uint8List] containing the 32-byte keccak256 hash of the encoded data
 Uint8List hashTypedData({
   required TypedMessage typedData,
   required TypedDataVersion version,
@@ -29,6 +39,16 @@ Uint8List hashTypedData({
   return keccak256(builder.toBytes());
 }
 
+/// Computes the hash of an EIP-712 domain separator.
+///
+/// The domain separator is a crucial component that helps prevent replay attacks
+/// across different domains. It includes chain ID, verifying contract address,
+/// and other domain-specific data.
+///
+/// [typedData] The typed message containing domain information
+/// [version] The version of EIP-712 standard to use
+///
+/// Returns a [Uint8List] containing the 32-byte keccak256 hash of the domain
 Uint8List eip712DomainHash({
   required TypedMessage typedData,
   required TypedDataVersion version,
@@ -47,6 +67,17 @@ Uint8List eip712DomainHash({
   );
 }
 
+/// Computes the hash of the message data portion of a typed data structure.
+///
+/// This function handles the message portion of the typed data, separate from
+/// the domain separator. It returns null if the primary type is the domain type,
+/// as per EIP-712 specification.
+///
+/// [typedData] The typed message containing the data to hash
+/// [version] The version of EIP-712 standard to use
+///
+/// Returns a [Uint8List] containing the 32-byte keccak256 hash of the message,
+/// or null if the primary type is the domain type
 Uint8List? getMessageHash({
   required TypedMessage typedData,
   required TypedDataVersion version,
@@ -66,6 +97,18 @@ Uint8List? getMessageHash({
   return null;
 }
 
+/// Computes the hash of a structured data type according to EIP-712 rules.
+///
+/// This function encodes and hashes a structured data type using the specified
+/// encoder version. It handles both basic types and custom struct types defined
+/// in the types parameter.
+///
+/// [primaryType] The primary type name of the struct to hash
+/// [data] The data values for the struct
+/// [types] A map of type definitions used in the struct
+/// [version] The version of EIP-712 standard to use
+///
+/// Returns a [Uint8List] containing the 32-byte keccak256 hash of the encoded struct
 Uint8List hashStruct({
   required String primaryType,
   required MessageTypes data,
@@ -77,12 +120,49 @@ Uint8List hashStruct({
   return keccak256(encodedData);
 }
 
+/// An encoder for EIP-712 typed data that implements the encoding rules specified in the standard.
+///
+/// This class handles the encoding of structured data according to EIP-712 specification,
+/// supporting both v3 and v4 versions of the standard. It provides functionality to encode
+/// various data types, hash types, and handle type dependencies.
+///
+/// The encoder supports the following data types:
+/// - Basic types: address, bool, string, bytes
+/// - Integer types: uint8-uint256, int8-int256
+/// - Bytes types: bytes1-bytes32
+/// - Arrays (only in v4)
+/// - Custom struct types
+///
+/// Example usage:
+/// ```dart
+/// final encoder = EIP712Encoder(
+///   types: {
+///     'Person': [
+///       MessageTypeProperty(name: 'name', type: 'string'),
+///       MessageTypeProperty(name: 'age', type: 'uint8'),
+///     ],
+///   },
+/// );
+/// ```
 class EIP712Encoder {
+  /// A map of type names to their corresponding property definitions.
   final Map<String, List<MessageTypeProperty>> types;
+
+  /// The version of the EIP-712 standard to use for encoding.
   final TypedDataVersion version;
 
+  /// Creates a new [EIP712Encoder] instance.
+  ///
+  /// [types] is a map of type names to their corresponding property definitions.
+  /// [version] specifies the EIP-712 version to use, defaulting to v4.
   EIP712Encoder({required this.types, this.version = TypedDataVersion.v4});
 
+  /// Encodes structured data according to EIP-712 rules.
+  ///
+  /// [primaryType] is the name of the primary type to encode.
+  /// [data] contains the actual values to encode.
+  ///
+  /// Returns a [Uint8List] containing the encoded data.
   Uint8List encodeData(String primaryType, MessageTypes data) {
     final List<String> encodedTypes = ['bytes32'];
     final List<Object> encodedValues = [hashType(primaryType: primaryType)];
@@ -103,6 +183,13 @@ class EIP712Encoder {
     return encode(encodedTypes, encodedValues);
   }
 
+  /// Encodes a single field according to its type and value.
+  ///
+  /// [name] is the field name.
+  /// [type] is the field type.
+  /// [value] is the field value.
+  ///
+  /// Returns a [TypeValuePair] containing the encoded type and value.
   TypeValuePair encodeField({
     required String name,
     required String type,
@@ -214,11 +301,21 @@ class EIP712Encoder {
     return (type: type, value: value);
   }
 
+  /// Computes the hash of a type string.
+  ///
+  /// [primaryType] is the name of the type to hash.
+  ///
+  /// Returns a [Uint8List] containing the type hash.
   Uint8List hashType({required String primaryType}) {
     final encodedHashType = encodeType(primaryType: primaryType);
     return keccak256(Uint8List.fromList(utf8.encode(encodedHashType)));
   }
 
+  /// Encodes a type string according to EIP-712 rules.
+  ///
+  /// [primaryType] is the name of the type to encode.
+  ///
+  /// Returns the encoded type string.
   String encodeType({required String primaryType}) {
     var result = '';
     final unsortedDeps = findTypeDependencies(primaryType: primaryType)
@@ -238,6 +335,13 @@ class EIP712Encoder {
     return result;
   }
 
+  /// Finds all type dependencies for a given type.
+  ///
+  /// [primaryType] is the type to find dependencies for.
+  /// [results] is the set of already found dependencies.
+  /// [stack] is used to detect circular dependencies.
+  ///
+  /// Returns a set of all dependent type names.
   Set<String> findTypeDependencies({
     required String primaryType,
     Set<String>? results,
@@ -278,6 +382,12 @@ class EIP712Encoder {
     return results;
   }
 
+  /// Checks if a numeric value is within the valid range for its type.
+  ///
+  /// [type] is the numeric type (uint/int with bit size).
+  /// [value] is the string representation of the number.
+  ///
+  /// Returns a tuple containing the minimum value, maximum value, and parsed value.
   (BigInt min, BigInt max, BigInt parsed) rangeCheck({
     required String type,
     required String value,
@@ -288,8 +398,6 @@ class EIP712Encoder {
 
     final parsed = BigInt.parse(value.toString());
 
-    // Signed range:  –2^(N–1) … 2^(N–1)–1
-    // Unsigned range: 0 … 2^N–1
     final min = isUnsigned ? BigInt.zero : -(BigInt.one << (bitSize - 1));
     final max =
         isUnsigned
@@ -299,20 +407,24 @@ class EIP712Encoder {
     return (min, max, parsed);
   }
 
+  /// Validates that a type is recognized and properly formatted.
+  ///
+  /// [name] is the field name.
+  /// [type] is the type to validate.
+  /// [definedStructs] is the set of defined struct types.
+  ///
+  /// Throws an [AssertionError] if the type is not recognized.
   void recognizeType(String name, String type, Set<String> definedStructs) {
     bool isPrimitive(String t) {
       if (t == 'address' || t == 'bool' || t == 'string' || t == 'bytes') {
         return true;
       }
-      // uint8, uint16, …, uint256
       if (RegExp(r'^uint(8|16|32|64|128|256)$').hasMatch(t)) {
         return true;
       }
-      // int8, int16, …, int256
       if (RegExp(r'^int(8|16|32|64|128|256)$').hasMatch(t)) {
         return true;
       }
-      // bytes1…bytes32
       if (RegExp(r'^bytes([1-9]|1[12]|2[0-9]|3[0-2])$').hasMatch(t)) {
         return true;
       }
@@ -331,6 +443,11 @@ class EIP712Encoder {
     throw AssertionError('Unrecognized type `$type` for field `$name`');
   }
 
+  /// Validates that a type name follows the allowed format.
+  ///
+  /// [name] is the type name to validate.
+  ///
+  /// Throws an [ArgumentError] if the name is invalid.
   void validateTypeName(String name) {
     const pattern = r'^[A-Za-z_][A-Za-z0-9_]*$';
     if (!RegExp(pattern).hasMatch(name)) {

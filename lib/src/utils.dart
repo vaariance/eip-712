@@ -76,7 +76,7 @@ Uint8List encode(List<String> types, List<dynamic> values) {
 /// ```dart
 /// var decodedValues = abi.decode(['uint256', 'string'], encodedData);
 /// ```
-List decode(List<String> types, Uint8List value) {
+List<Object?> decode(List<String> types, Uint8List value) {
   List<AbiType> abiTypes = [];
   for (String type in types) {
     var abiType = parseAbiType(type);

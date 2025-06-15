@@ -64,7 +64,7 @@ void main() {
     typedData: typedData,
     version: TypedDataVersion.v4,
   );
-
+  print("signed hash: ${bytesToHex(typedDataHash, include0x: true)}");
   final Uint8List signature = privateKey.signToUint8List(typedDataHash);
-  print(bytesToHex(signature, include0x: true));
+  print("signature: ${bytesToHex(signature, include0x: true)}");
 }

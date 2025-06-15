@@ -253,9 +253,6 @@ try {
 } on RangeError catch (e) {
   // Handle integer overflow/underflow
   print('Range error: ${e.message}');
-} on StateError catch (e) {
-  // Handle internal state errors
-  print('State error: ${e.message}');
 } on AssertionError catch (e) {
   // Handle unrecognized type primitives
   print('Unsupported error: ${e.message}');
