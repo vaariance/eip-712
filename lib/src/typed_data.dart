@@ -231,6 +231,8 @@ class EIP712Encoder {
     if (type == 'bytes') {
       if (value is num) {
         value = intToBytes(BigInt.from(value));
+      } else if (value is BigInt) {
+        value = intToBytes(value);
       } else if (isHex(value)) {
         value = hexToBytes(value);
       } else if (value is List<int>) {
@@ -244,11 +246,19 @@ class EIP712Encoder {
         if (value < 0) {
           return (type: 'bytes32', value: Uint8List(32));
         }
-        return (type: 'bytes32', value: intToBytes(BigInt.from(value)));
+        return (
+          type: 'bytes32',
+          value: intToBytes(BigInt.from(value)).padTo32Bytes(),
+        );
+      } else if (value is BigInt) {
+        value = intToBytes(value);
       } else if (isHex(value)) {
-        return (type: 'bytes32', value: hexToBytes(value));
+        return (type: 'bytes32', value: hexToBytes(value).padTo32Bytes());
       }
-      return (type: 'bytes32', value: value);
+      if (value is! List<int> || value is! Uint8List) {
+        throw ArgumentError('Invalid value for field $name of type $type');
+      }
+      return (type: 'bytes32', value: value.padTo32Bytes());
     }
 
     if ((type.startsWith('uint') || type.startsWith('int')) &&
@@ -271,6 +281,8 @@ class EIP712Encoder {
     if (type == 'string') {
       if (value is num) {
         value = intToBytes(BigInt.from(value));
+      } else if (value is BigInt) {
+        value = intToBytes(value);
       } else if (value is List<int>) {
       } else {
         value = Uint8List.fromList(utf8.encode(value));
@@ -323,13 +335,8 @@ class EIP712Encoder {
     final deps = [primaryType, ...List.of(unsortedDeps)..sort()];
 
     for (final type in deps) {
-      final children = types[type];
-      if (children == null) {
-        throw ArgumentError('No type definition for: \$type');
-      }
-
       result +=
-          "$type(${types[type]!.map((tp) => '${tp.type} ${tp.name}').join(',')})";
+          "$type(${types[type]?.map((tp) => '${tp.type} ${tp.name}').join(',')})";
     }
 
     return result;

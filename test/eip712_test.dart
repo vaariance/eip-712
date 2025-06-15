@@ -5,7 +5,13 @@ import 'package:eip712/src/typed_data.dart';
 import 'package:test/test.dart';
 import 'package:wallet/wallet.dart';
 import 'package:web3dart/web3dart.dart'
-    show EthPrivateKey, bytesToHex, intToBytes, isValidSignature, keccak256;
+    show
+        EthPrivateKey,
+        bytesToHex,
+        hexToBytes,
+        intToBytes,
+        isValidSignature,
+        keccak256;
 
 import '../example/eip712_example.dart' show rawTypedDataJson;
 
@@ -293,6 +299,14 @@ void main() {
           () => encoder.encodeField(
             name: 'user',
             type: 'address',
+            value: '0x1234q',
+          ),
+          throwsArgumentError,
+        );
+        expect(
+          () => encoder.encodeField(
+            name: 'user',
+            type: 'address',
             value: '0x1234',
           ),
           throwsArgumentError,
@@ -418,6 +432,38 @@ void main() {
         expect(decoded.first, equals(typeValuePair.value));
       });
 
+      test("should handle fixed bytes from hex string", () {
+        final fixed = '0x12345678'; // 4 bytes
+        final typeValuePair = encoder.encodeField(
+          name: 'data',
+          type: 'bytes4',
+          value: fixed,
+        );
+
+        expect(typeValuePair.type, equals('bytes32'));
+        expect(typeValuePair.value, equals(hexToBytes(fixed).padTo32Bytes()));
+
+        final encoded = encode([typeValuePair.type], [typeValuePair.value]);
+        final decoded = decode(['bytes32'], encoded);
+        expect(decoded.first, equals(typeValuePair.value));
+      });
+
+      test("should handle fixed bytes from nummber", () {
+        final fixed = BigInt.parse('0xff');
+        final typeValuePair = encoder.encodeField(
+          name: 'data',
+          type: 'bytes4',
+          value: fixed,
+        );
+
+        expect(typeValuePair.type, equals('bytes32'));
+        expect(typeValuePair.value, equals(intToBytes(fixed).padTo32Bytes()));
+
+        final encoded = encode([typeValuePair.type], [typeValuePair.value]);
+        final decoded = decode(['bytes32'], encoded);
+        expect(decoded.first, equals(typeValuePair.value));
+      });
+
       test('should handle negative numbers for fixed bytes', () {
         final typeValuePair = encoder.encodeField(
           name: 'data',
@@ -430,6 +476,17 @@ void main() {
         final encoded = encode([typeValuePair.type], [typeValuePair.value]);
         final decoded = decode(['bytes32'], encoded);
         expect(decoded.first, equals(typeValuePair.value));
+      });
+
+      test('should handle unknown vlaue type for a fixed bytes', () {
+        expect(
+          () => encoder.encodeField(
+            name: 'data',
+            type: 'bytes4',
+            value: BytesBuilder(),
+          ),
+          throwsArgumentError,
+        );
       });
     });
 
@@ -907,6 +964,14 @@ void main() {
         );
       }
     });
+
+    test('should throw error when type is not matched', () {
+      expect(
+        () => encoder.findTypeDependencies(primaryType: ''),
+        throwsArgumentError,
+        reason: 'Referencing an empty type must throw',
+      );
+    });
   });
 
   group('Range Checking', () {
@@ -1020,10 +1085,21 @@ void main() {
   });
 
   group('Error Handling', () {
-    test('should throw UnsupportedError for unrecognized types', () {
+    test('should throw Error for invalid domian property access', () {
+      expect(() => typedMessage.domain?['john'], throwsArgumentError);
+    });
+    test('should throw Error for unrecognized types', () {
       expect(
         () =>
             encoder.encodeField(name: 'foo', type: 'not_a_type', value: 'bar'),
+        throwsA(isA<AssertionError>()),
+      );
+      expect(
+        () => encoder.encodeField(
+          name: 'foo',
+          type: 'not_a_type[]',
+          value: ['bar'],
+        ),
         throwsA(isA<AssertionError>()),
       );
     });
@@ -1185,6 +1261,14 @@ void main() {
       final encoded = encode([tvp.type], [tvp.value]);
       final decoded = decode(['bytes32'], encoded);
       expect(decoded.first, equals(keccak256(utf8.encode(emoji))));
+    });
+
+    test("should handle null value correctly", () {
+      expect(
+        () =>
+            encoder.encodeField(name: 'nullValue', type: 'string', value: null),
+        throwsArgumentError,
+      );
     });
 
     test('should handle zero values correctly', () {
