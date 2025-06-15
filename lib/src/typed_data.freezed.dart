@@ -16,7 +16,9 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$MessageTypeProperty {
 
- String get name; String get type;
+/// The name of the property
+ String get name;/// The type of the property
+ String get type;
 /// Create a copy of MessageTypeProperty
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -84,7 +86,9 @@ class _MessageTypeProperty implements MessageTypeProperty {
   const _MessageTypeProperty({required this.name, required this.type});
   factory _MessageTypeProperty.fromJson(Map<String, dynamic> json) => _$MessageTypePropertyFromJson(json);
 
+/// The name of the property
 @override final  String name;
+/// The type of the property
 @override final  String type;
 
 /// Create a copy of MessageTypeProperty
@@ -152,7 +156,11 @@ as String,
 /// @nodoc
 mixin _$TypedMessage {
 
- Map<String, List<MessageTypeProperty>> get types; String get primaryType; EIP712Domain? get domain; Map<String, dynamic> get message;
+/// The type definitions for the message
+ Map<String, List<MessageTypeProperty>> get types;/// The primary type being signed
+ String get primaryType;/// The domain separator data
+ EIP712Domain? get domain;/// The message data
+ Map<String, dynamic> get message;
 /// Create a copy of TypedMessage
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -234,16 +242,22 @@ class _TypedMessage implements TypedMessage {
   const _TypedMessage({required final  Map<String, List<MessageTypeProperty>> types, required this.primaryType, required this.domain, required final  Map<String, dynamic> message}): _types = types,_message = message;
   factory _TypedMessage.fromJson(Map<String, dynamic> json) => _$TypedMessageFromJson(json);
 
+/// The type definitions for the message
  final  Map<String, List<MessageTypeProperty>> _types;
+/// The type definitions for the message
 @override Map<String, List<MessageTypeProperty>> get types {
   if (_types is EqualUnmodifiableMapView) return _types;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableMapView(_types);
 }
 
+/// The primary type being signed
 @override final  String primaryType;
+/// The domain separator data
 @override final  EIP712Domain? domain;
+/// The message data
  final  Map<String, dynamic> _message;
+/// The message data
 @override Map<String, dynamic> get message {
   if (_message is EqualUnmodifiableMapView) return _message;
   // ignore: implicit_dynamic_type
@@ -330,7 +344,12 @@ $EIP712DomainCopyWith<$Res>? get domain {
 /// @nodoc
 mixin _$EIP712Domain {
 
- String? get name; String? get version;@BigintConverter() BigInt? get chainId;@EthereumAddressConverter() EthereumAddress? get verifyingContract;@U8AConverter() Uint8List? get salt;
+/// The name of the signing domain
+ String? get name;/// The version of the signing domain
+ String? get version;/// The chain ID of the network
+@BigintConverter() BigInt? get chainId;/// The verifying contract address
+@EthereumAddressConverter() EthereumAddress? get verifyingContract;/// An optional salt value
+@U8AConverter() Uint8List? get salt;
 /// Create a copy of EIP712Domain
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -401,10 +420,15 @@ class _EIP712Domain extends EIP712Domain {
   const _EIP712Domain({required this.name, required this.version, @BigintConverter() required this.chainId, @EthereumAddressConverter() required this.verifyingContract, @U8AConverter() required this.salt}): super._();
   factory _EIP712Domain.fromJson(Map<String, dynamic> json) => _$EIP712DomainFromJson(json);
 
+/// The name of the signing domain
 @override final  String? name;
+/// The version of the signing domain
 @override final  String? version;
+/// The chain ID of the network
 @override@BigintConverter() final  BigInt? chainId;
+/// The verifying contract address
 @override@EthereumAddressConverter() final  EthereumAddress? verifyingContract;
+/// An optional salt value
 @override@U8AConverter() final  Uint8List? salt;
 
 /// Create a copy of EIP712Domain

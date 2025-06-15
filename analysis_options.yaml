@@ -23,6 +23,9 @@ include: package:lints/recommended.yaml
 #   exclude:
 #     - path/to/excluded/files/**
 analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
   errors:
     invalid_annotation_target: ignore
 
