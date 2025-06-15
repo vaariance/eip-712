@@ -1,8 +1,13 @@
-/// Support for doing something awesome.
-///
-/// More dartdocs go here.
+/// CREDITS: https://github.com/MetaMask/eth-sig-util
 library;
 
-export 'src/eip712_base.dart';
-
-// TODO: Export any libraries intended for clients of this package.
+export 'src/typed_data.dart'
+    show
+        TypedMessage,
+        TypedDataVersion,
+        EIP712Domain,
+        MessageTypeProperty,
+        encode,
+        decode,
+        isHex,
+        hashTypedData;

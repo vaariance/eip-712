@@ -1,15 +1,27 @@
 name: eip712
-description: A starting point for Dart libraries or applications.
-version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+description: Dart EIP-712 for structured data signing.
+version: 0.0.1
+homepage: https://variance.space
+repository: https://github.com/vaariance/eip-712
+issue_tracker: https://github.com/vaariance/eip-712/issues
 
 environment:
   sdk: ^3.7.2
 
-# Add regular dependencies here.
 dependencies:
-  # path: ^1.8.0
+  wallet: ^0.0.18
+  web3dart: ^3.0.1
+  json_annotation: ^4.9.0
+  freezed_annotation: ^3.0.0
 
 dev_dependencies:
+  build_runner: ^2.4.15
+  freezed: ^3.0.6
+  json_serializable: ^6.9.5
   lints: ^5.0.0
   test: ^1.24.0
+
+topics:
+  - ethereum
+  - sign-typed-data
+  - eip-712
