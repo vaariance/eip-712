@@ -1,6 +1,6 @@
 name: eip712
 description: Dart implementation of EIP-712 (Ethereum typed structured data hashing and signing) that enables type-safe signing of structured data with Ethereum wallets.
-version: 0.0.1
+version: 1.0.0
 homepage: https://variance.space
 repository: https://github.com/vaariance/eip-712
 issue_tracker: https://github.com/vaariance/eip-712/issues
