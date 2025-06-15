@@ -23,8 +23,6 @@ jobs:
 
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
-        with:
-          environment: pub.dev
 
       - name: Install dependencies
         run: dart pub get
