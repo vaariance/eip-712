@@ -13,13 +13,18 @@ void main() {
   final Random random = Random.secure();
   final EthPrivateKey privateKey = EthPrivateKey.createRandom(random);
 
+  final TypedMessage typedMessage = TypedMessage.fromJson(rawTypedDataJson);
+  final encoder = EIP712Encoder(types: typedMessage.types);
+  final encoderV3 = EIP712Encoder(
+    types: typedMessage.types,
+    version: TypedDataVersion.v3,
+  );
+
   group('EIP-712 Core Functions', () {
     group('hashTypedData', () {
       test('should hash typed data with v4 version', () {
-        final typedData = TypedMessage.fromJson(rawTypedDataJson);
-
         final digest = hashTypedData(
-          typedData: typedData,
+          typedData: typedMessage,
           version: TypedDataVersion.v4,
         );
 
@@ -34,10 +39,8 @@ void main() {
       });
 
       test('should hash typed data with v3 version', () {
-        final typedData = TypedMessage.fromJson(rawTypedDataJson);
-
         final digest = hashTypedData(
-          typedData: typedData,
+          typedData: typedMessage,
           version: TypedDataVersion.v3,
         );
 
@@ -95,10 +98,8 @@ void main() {
     });
 
     group('eip712DomainHash', () {
-      final fullTypedData = TypedMessage.fromJson(rawTypedDataJson);
-
       final fullDomainHash = eip712DomainHash(
-        typedData: fullTypedData,
+        typedData: typedMessage,
         version: TypedDataVersion.v4,
       );
 
@@ -166,8 +167,6 @@ void main() {
     });
 
     group('getMessageHash', () {
-      final TypedMessage typedMessage = TypedMessage.fromJson(rawTypedDataJson);
-
       test('should return message hash for non-domain primary type', () {
         final hash = getMessageHash(
           typedData: typedMessage,
@@ -237,12 +236,6 @@ void main() {
   });
 
   group('Data Type Encoding', () {
-    final TypedMessage typedMessage = TypedMessage.fromJson(rawTypedDataJson);
-    final encoder = EIP712Encoder(types: typedMessage.types);
-    final encoderV3 = EIP712Encoder(
-      types: typedMessage.types,
-      version: TypedDataVersion.v3,
-    );
     group('Address Type', () {
       test('should encode valid ethereum address', () {
         final address = EthereumAddress.fromHex(
@@ -787,106 +780,502 @@ void main() {
   });
 
   group('Version Compatibility', () {
+    final String zeroHashHex = bytesToHex(Uint8List(32), include0x: true);
     test('should handle v3 encoding differences', () {
-      // TODO: Implement v3 specific test
+      final tvp3 = encoderV3.encodeField(
+        name: 'person',
+        type: 'Person',
+        value: null,
+      );
+      expect(tvp3.type, equals('bytes32'));
+      final String tvp3Hex = bytesToHex(
+        tvp3.value.as<Uint8List>(),
+        include0x: true,
+      );
+      expect(tvp3Hex, isNot(equals(zeroHashHex)));
+      expect(
+        () => encoderV3.encodeField(
+          name: 'arr',
+          type: 'uint256[]',
+          value: [BigInt.one, BigInt.two],
+        ),
+        throwsArgumentError,
+      );
     });
 
     test('should handle v4 encoding differences', () {
-      // TODO: Implement v4 specific test
-    });
-
-    test('should handle version-specific array behavior', () {
-      // TODO: Implement version array behavior test
+      final tvp4 = encoder.encodeField(
+        name: 'person',
+        type: 'Person',
+        value: null,
+      );
+      expect(tvp4.type, equals('bytes32'));
+      expect(tvp4.value, equals(zeroHashHex));
     });
 
     test('should handle version-specific null behavior', () {
-      // TODO: Implement version null behavior test
+      final domainOnlyJson = {
+        'types': {'EIP712Domain': rawTypedDataJson['types']['EIP712Domain']},
+        'primaryType': 'EIP712Domain',
+        'domain': rawTypedDataJson['domain'],
+        'message': <String, dynamic>{},
+      };
+      final domainMsg = TypedMessage.fromJson(domainOnlyJson);
+      final domEnc3 = EIP712Encoder(
+        types: domainMsg.types,
+        version: TypedDataVersion.v3,
+      );
+      final domEnc4 = EIP712Encoder(
+        types: domainMsg.types,
+        version: TypedDataVersion.v4,
+      );
+
+      final tvp3Dom = domEnc3.encodeField(
+        name: 'EIP712Domain',
+        type: 'EIP712Domain',
+        value: null,
+      );
+      final tvp4Dom = domEnc4.encodeField(
+        name: 'EIP712Domain',
+        type: 'EIP712Domain',
+        value: null,
+      );
+
+      // v3 domain null → non-zero
+      final String dom3Hex = bytesToHex(
+        tvp3Dom.value as Uint8List,
+        include0x: true,
+      );
+      expect(dom3Hex, isNot(equals(zeroHashHex)));
+
+      // v4 domain null → zero
+      expect(tvp4Dom.value, equals(zeroHashHex));
     });
   });
 
   group('Type Dependencies and Validation', () {
     test('should find all type dependencies', () {
-      // TODO: Implement type dependency test
+      final deps = encoder.findTypeDependencies(primaryType: 'Mail');
+      expect(
+        deps.toSet(),
+        equals({'Mail', 'Person'}),
+        reason: 'Mail should depend on Person exactly once',
+      );
     });
 
     test('should handle circular type dependencies', () {
-      // TODO: Implement circular dependency test
+      final circular = {
+        'A': [MessageTypeProperty(name: 'b', type: 'B')],
+        'B': [MessageTypeProperty(name: 'a', type: 'A')],
+      };
+      final subEnc = EIP712Encoder(types: circular);
+
+      expect(
+        () => subEnc.findTypeDependencies(primaryType: 'A'),
+        throwsArgumentError,
+        reason: 'Circular references should error out',
+      );
     });
 
     test('should throw error for missing type definitions', () {
-      // TODO: Implement missing type error test
+      final missing = {
+        'A': [MessageTypeProperty(name: 'foo', type: 'Unknown')],
+      };
+      final subEnc = EIP712Encoder(types: missing);
+      expect(
+        () => subEnc.findTypeDependencies(primaryType: 'A'),
+        throwsA(isA<AssertionError>()),
+        reason: 'Referencing an undefined type must throw',
+      );
     });
 
     test('should validate type names', () {
-      // TODO: Implement type name validation test
+      const valid = ['Foo', 'Bar123', '_Baz'];
+      for (final name in valid) {
+        expect(
+          () => encoder.validateTypeName(name),
+          returnsNormally,
+          reason: 'Type name `$name` should be accepted',
+        );
+      }
+      const invalid = ['1Foo', 'Foo-bar', ''];
+      for (final name in invalid) {
+        expect(
+          () => encoder.validateTypeName(name),
+          throwsArgumentError,
+          reason: 'Type name `$name` should be rejected',
+        );
+      }
     });
   });
 
   group('Range Checking', () {
     test('should validate uint ranges correctly', () {
-      // TODO: Implement uint range validation test
+      // min: uint8: 0…255
+      expect(
+        () => encoder.encodeField(
+          name: 'minU8',
+          type: 'uint8',
+          value: BigInt.zero,
+        ),
+        returnsNormally,
+      );
+      expect(
+        () => encoder.encodeField(
+          name: 'maxU8',
+          type: 'uint8',
+          value: BigInt.from(255),
+        ),
+        returnsNormally,
+      );
+
+      //max: uint256: 0…2^256-1
+      final maxU256 = (BigInt.one << 256) - BigInt.one;
+      expect(
+        () => encoder.encodeField(
+          name: 'maxU256',
+          type: 'uint256',
+          value: maxU256,
+        ),
+        returnsNormally,
+      );
     });
 
     test('should validate int ranges correctly', () {
-      // TODO: Implement int range validation test
+      //min: int8: -128…127
+      expect(
+        () => encoder.encodeField(
+          name: 'minI8',
+          type: 'int8',
+          value: BigInt.from(-128),
+        ),
+        returnsNormally,
+      );
+      expect(
+        () => encoder.encodeField(
+          name: 'maxI8',
+          type: 'int8',
+          value: BigInt.from(127),
+        ),
+        returnsNormally,
+      );
+
+      //max: int256: -2^255…2^255-1
+      expect(
+        () => encoder.encodeField(
+          name: 'minI256',
+          type: 'int256',
+          value: -(BigInt.one << 255),
+        ),
+        returnsNormally,
+      );
+      expect(
+        () => encoder.encodeField(
+          name: 'maxI256',
+          type: 'int256',
+          value: (BigInt.one << 255) - BigInt.one,
+        ),
+        returnsNormally,
+      );
     });
 
     test('should handle edge cases for range limits', () {
-      // TODO: Implement range edge case test
+      // overflow uint8
+      expect(
+        () => encoder.encodeField(
+          name: 'overflowU8',
+          type: 'uint8',
+          value: BigInt.from(256),
+        ),
+        throwsRangeError,
+      );
+      // underflow int8
+      expect(
+        () => encoder.encodeField(
+          name: 'underflowI8',
+          type: 'int8',
+          value: BigInt.from(-129),
+        ),
+        throwsRangeError,
+      );
     });
 
     test('should parse bit sizes correctly', () {
-      // TODO: Implement bit size parsing test
+      final (minU8, maxU8, parsedU8) = encoder.rangeCheck(
+        type: 'uint8',
+        value: '42',
+      );
+      expect(minU8, BigInt.zero);
+      expect(maxU8, BigInt.from(255));
+      expect(parsedU8, BigInt.from(42));
+
+      final (minI16, maxI16, parsedI16) = encoder.rangeCheck(
+        type: 'int16',
+        value: '-12345',
+      );
+      expect(minI16, BigInt.from(-32768));
+      expect(maxI16, BigInt.from(32767));
+      expect(parsedI16, BigInt.from(-12345));
     });
   });
 
   group('Error Handling', () {
-    test('should throw ArgumentError for invalid types', () {
-      // TODO: Implement invalid type error test
+    test('should throw UnsupportedError for unrecognized types', () {
+      expect(
+        () =>
+            encoder.encodeField(name: 'foo', type: 'not_a_type', value: 'bar'),
+        throwsA(isA<AssertionError>()),
+      );
     });
 
     test('should throw RangeError for out-of-range values', () {
-      // TODO: Implement range error test
+      // uint8 only allows 0..255
+      expect(
+        () => encoder.encodeField(
+          name: 'tooBig',
+          type: 'uint8',
+          value: BigInt.from(256),
+        ),
+        throwsRangeError,
+      );
+      // int16 allows -32768..32767
+      expect(
+        () => encoder.encodeField(
+          name: 'tooSmall',
+          type: 'int16',
+          value: BigInt.from(-32769),
+        ),
+        throwsRangeError,
+      );
     });
 
     test('should handle malformed type definitions gracefully', () {
-      // TODO: Implement malformed type test
+      final badJson = {
+        'types': {
+          'EIP712Domain': rawTypedDataJson['types']['EIP712Domain'],
+          'Foo': [
+            {'name': 'bar', 'type': 'NonExistent'},
+          ],
+        },
+        'primaryType': 'Foo',
+        'domain': rawTypedDataJson['domain'],
+        'message': {'bar': 123},
+      };
+      final badMsg = TypedMessage.fromJson(badJson);
+      final badEncoder = EIP712Encoder(
+        types: badMsg.types,
+        version: TypedDataVersion.v4,
+      );
+
+      expect(
+        () => badEncoder.encodeField(
+          name: 'bar',
+          type: 'Foo',
+          value: {'bar': 123},
+        ),
+        throwsA(isA<AssertionError>()),
+      );
     });
 
     test('should validate required parameters', () {
-      // TODO: Implement required parameter test
+      // encode() requires matching lengths
+      expect(
+        () => encode(['uint256', 'address'], [BigInt.one]),
+        throwsA(isA<AssertionError>()),
+      );
+      // hashTypedData requires a valid domain
+      final noDomainJson = {
+        ...rawTypedDataJson,
+        'domain': <String, dynamic>{}, // missing required domain fields
+      };
+      final noDomainMsg = TypedMessage.fromJson(noDomainJson);
+      expect(
+        () =>
+            hashTypedData(typedData: noDomainMsg, version: TypedDataVersion.v4),
+        throwsArgumentError,
+      );
     });
   });
 
   group('Edge Cases', () {
     test('should handle extremely large integers', () {
-      // TODO: Implement large integer test
+      // max uint256
+      final BigInt maxUint = (BigInt.one << 256) - BigInt.one;
+      final tvpUint = encoder.encodeField(
+        name: 'max',
+        type: 'uint256',
+        value: maxUint,
+      );
+      final encUint = encode([tvpUint.type], [tvpUint.value]);
+      final decUint = decode(['uint256'], encUint);
+      expect(decUint.first, equals(maxUint));
+
+      // min int256
+      final BigInt minInt = -(BigInt.one << 255);
+      final tvpInt = encoder.encodeField(
+        name: 'min',
+        type: 'int256',
+        value: minInt,
+      );
+      final encInt = encode([tvpInt.type], [tvpInt.value]);
+      final decInt = decode(['int256'], encInt);
+      expect(decInt.first, equals(minInt));
     });
 
     test('should handle very long strings', () {
-      // TODO: Implement long string test
+      final String longStr = 'a' * 21000;
+      final tvp = encoder.encodeField(
+        name: 'long',
+        type: 'string',
+        value: longStr,
+      );
+      final Uint8List encoded = encode([tvp.type], [tvp.value]);
+      final decoded = decode(['bytes32'], encoded);
+      expect(decoded.first, equals(keccak256(utf8.encode(longStr))));
     });
 
     test('should handle deeply nested structures', () {
-      // TODO: Implement deep nesting test
+      // Build a deep nested struct: L1→L2→L3→value
+      final nestedJson = {
+        'types': {
+          'EIP712Domain': rawTypedDataJson['types']['EIP712Domain'],
+          'Level3': [
+            {'name': 'value', 'type': 'uint256'},
+          ],
+          'Level2': [
+            {'name': 'next', 'type': 'Level3'},
+          ],
+          'Level1': [
+            {'name': 'next', 'type': 'Level2'},
+          ],
+        },
+        'primaryType': 'Level1',
+        'domain': rawTypedDataJson['domain'],
+        'message': {
+          'next': {
+            'next': {'value': BigInt.from(123)},
+          },
+        },
+      };
+      final nestedMsg = TypedMessage.fromJson(nestedJson);
+      final nestedEnc = EIP712Encoder(
+        types: nestedMsg.types,
+        version: TypedDataVersion.v4,
+      );
+      final tvp = nestedEnc.encodeField(
+        name: 'lvl',
+        type: 'Level1',
+        value: nestedJson['message'],
+      );
+      // Should be a 32-byte hash and not the zero hash
+      expect(tvp.value.length, equals(32));
+      expect(
+        bytesToHex(tvp.value.as<List<int>>(), include0x: true),
+        isNot(equals(bytesToHex(Uint8List(32), include0x: true))),
+      );
     });
 
     test('should handle special characters in strings', () {
-      // TODO: Implement special character test
+      final String emoji = '🚀🔥 中文';
+      final tvp = encoder.encodeField(
+        name: 'text',
+        type: 'string',
+        value: emoji,
+      );
+      final encoded = encode([tvp.type], [tvp.value]);
+      final decoded = decode(['bytes32'], encoded);
+      expect(decoded.first, equals(keccak256(utf8.encode(emoji))));
     });
 
     test('should handle zero values correctly', () {
-      // TODO: Implement zero value test
+      // Zero uint256
+      final tvpUint = encoder.encodeField(
+        name: 'zeroUint',
+        type: 'uint256',
+        value: BigInt.zero,
+      );
+      final encUint = encode([tvpUint.type], [tvpUint.value]);
+      // All bytes zero
+      expect(encUint.every((b) => b == 0), isTrue);
+      final decUint = decode(['uint256'], encUint);
+      expect(decUint.first, equals(BigInt.zero));
+
+      // Zero-length bytes (empty bytes array)
+      final tvpBytes = encoder.encodeField(
+        name: 'emptyBytes',
+        type: 'bytes',
+        value: <int>[],
+      );
+      final encBytes = encode([tvpBytes.type], [tvpBytes.value]);
+      expect(encBytes.length, equals(32));
     });
   });
 
   group('Utility Functions', () {
     test('should validate hex strings correctly', () {
-      // TODO: Implement hex validation test
+      expect(isHex('0xabcdef'), isTrue);
+      expect(isHex('0XABCDEF'), isFalse, reason: 'invalid in ethereum context');
+      expect(isHex('0x1234'), isTrue);
+      expect(isHex('0x123', ignoreLength: true), isTrue);
+
+      expect(isHex('abcdef'), isTrue, reason: 'true, valid hex');
+      expect(isHex('abcdefq'), isFalse, reason: 'false, invalid hex');
+      expect(isHex('0x12345g'), isFalse, reason: 'invalid hex character');
+      expect(isHex('0x'), isTrue, reason: 'adapts to eth empty bytes');
+      expect(isHex('0x1234 '), isFalse, reason: 'trailing space');
     });
 
     test('should handle type conversions', () {
-      // TODO: Implement type conversion test
+      // 1) TypedMessage JSON ↔ model round-trip
+      final Map<String, dynamic> msgJson = typedMessage.toJson();
+      final TypedMessage msgRt = TypedMessage.fromJson(msgJson);
+      expect(msgRt, equals(typedMessage));
+
+      // 2) Domain field conversions
+      expect(
+        typedMessage.domain?.chainId,
+        equals(BigInt.from(rawTypedDataJson['domain']['chainId'])),
+      );
+      expect(
+        typedMessage.domain?.verifyingContract,
+        equals(
+          EthereumAddress.fromHex(
+            rawTypedDataJson['domain']['verifyingContract'],
+          ),
+        ),
+      );
+
+      // 3) MessageTypes / Property conversions
+      final personProps = typedMessage.types['Person']!;
+      expect(personProps.map((p) => p.name), containsAll(['name', 'wallets']));
+      expect(
+        personProps.firstWhere((p) => p.name == 'wallets').type,
+        equals('address[]'),
+      );
+
+      // 4) Raw message content intact
+      expect(
+        typedMessage.message['contents'],
+        equals(rawTypedDataJson['message']['contents']),
+      );
+
+      // 5) U8AConverter sanity
+      final U8AConverter u8aConv = U8AConverter();
+      final Uint8List rawBytes = Uint8List.fromList([10, 20, 30]);
+      final dynamic u8aJson = u8aConv.toJson(rawBytes);
+      expect(u8aJson, equals(bytesToHex([10, 20, 30], include0x: true)));
+      final Uint8List u8aRt = u8aConv.fromJson(u8aJson);
+      expect(u8aRt, equals(rawBytes));
+
+      // 6) EthereumAddressConverter sanity
+      final EthereumAddress addr = EthereumAddress.fromHex(
+        '0x000000000000000000000000000000000000dead',
+      );
+      final EthereumAddressConverter ethConv = EthereumAddressConverter();
+      final dynamic ethJson = ethConv.toJson(addr);
+      expect(ethJson, equals(addr.with0x));
+      final EthereumAddress ethRt = ethConv.fromJson(ethJson);
+      expect(ethRt, equals(addr));
     });
   });
 }

@@ -1,8 +1,8 @@
 # EIP-712
 
-[![Coverage Status](https://coveralls.io/repos/github/variance-labs/eip-712/badge.svg?branch=main)](https://coveralls.io/github/variance-labs/eip-712?branch=main)
+[![Coverage Status](https://coveralls.io/repos/github/vaariance/eip-712/badge.svg?branch=main)](https://coveralls.io/github/vaariance/eip-712?branch=main)
 
-A comprehensive Dart implementation of [EIP-712](https://eips.ethereum.org/EIPS/eip-712) (Ethereum Typed Structured Data Hashing and Signing) that provides secure and standardized message signing for Ethereum applications.
+A Comprehensive and Strictly Typed Dart implementation of [EIP-712](https://eips.ethereum.org/EIPS/eip-712) (Ethereum Typed Structured Data Hashing and Signing) that provides secure and standardized message signing for Ethereum applications.
 
 ## Features
 
@@ -256,6 +256,9 @@ try {
 } on StateError catch (e) {
   // Handle internal state errors
   print('State error: ${e.message}');
+} on AssertionError catch (e) {
+  // Handle unrecognized type primitives
+  print('Unsupported error: ${e.message}');
 }
 ```
 

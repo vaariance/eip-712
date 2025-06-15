@@ -228,8 +228,8 @@ $EIP712DomainCopyWith<$Res>? get domain {
 
 
 /// @nodoc
-@JsonSerializable()
 
+@JsonSerializable(explicitToJson: true)
 class _TypedMessage implements TypedMessage {
   const _TypedMessage({required final  Map<String, List<MessageTypeProperty>> types, required this.primaryType, required this.domain, required final  Map<String, dynamic> message}): _types = types,_message = message;
   factory _TypedMessage.fromJson(Map<String, dynamic> json) => _$TypedMessageFromJson(json);

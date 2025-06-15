@@ -40,9 +40,11 @@ _TypedMessage _$TypedMessageFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$TypedMessageToJson(_TypedMessage instance) =>
     <String, dynamic>{
-      'types': instance.types,
+      'types': instance.types.map(
+        (k, e) => MapEntry(k, e.map((e) => e.toJson()).toList()),
+      ),
       'primaryType': instance.primaryType,
-      'domain': instance.domain,
+      'domain': instance.domain?.toJson(),
       'message': instance.message,
     };
 

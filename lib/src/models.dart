@@ -75,6 +75,7 @@ abstract class MessageTypeProperty with _$MessageTypeProperty {
 
 @freezed
 abstract class TypedMessage with _$TypedMessage {
+  @JsonSerializable(explicitToJson: true)
   const factory TypedMessage({
     required Map<String, List<MessageTypeProperty>> types,
     required String primaryType,
@@ -98,8 +99,18 @@ abstract class EIP712Domain with _$EIP712Domain {
     @U8AConverter() required Uint8List? salt,
   }) = _EIP712Domain;
 
+  static String get type => 'EIP712Domain';
+
   factory EIP712Domain.fromJson(Map<String, Object?> json) =>
       _$EIP712DomainFromJson(json);
+
+  factory EIP712Domain.empty() => const EIP712Domain(
+    name: null,
+    version: null,
+    chainId: null,
+    verifyingContract: null,
+    salt: null,
+  );
 
   dynamic operator [](String key) {
     switch (key) {
@@ -129,5 +140,5 @@ sealed class MessageTypes with _$MessageTypes {
   }) = AdditionalData;
 
   factory MessageTypes.from(dynamic raw) =>
-      MessageTypes.additionalData(value: raw as Map<String, dynamic>);
+      MessageTypes.additionalData(value: raw as Map<String, dynamic>?);
 }

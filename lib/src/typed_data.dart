@@ -36,9 +36,11 @@ Uint8List eip712DomainHash({
   final MessageTypes domain = MessageTypes.eip712Domain(
     value: typedData.domain,
   );
-  final domainTypes = {'EIP712Domain': typedData.types['EIP712Domain'] ?? []};
+  final domainTypes = {
+    EIP712Domain.type: typedData.types[EIP712Domain.type] ?? [],
+  };
   return hashStruct(
-    primaryType: 'EIP712Domain',
+    primaryType: EIP712Domain.type,
     data: domain,
     types: domainTypes,
     version: version,
@@ -52,7 +54,7 @@ Uint8List? getMessageHash({
   final MessageTypes message = MessageTypes.additionalData(
     value: typedData.message,
   );
-  final isPrimaryType = typedData.primaryType == 'EIP712Domain';
+  final isPrimaryType = typedData.primaryType == EIP712Domain.type;
   if (!isPrimaryType) {
     return hashStruct(
       primaryType: typedData.primaryType,
@@ -144,6 +146,8 @@ class EIP712Encoder {
         value = intToBytes(BigInt.from(value));
       } else if (isHex(value)) {
         value = hexToBytes(value);
+      } else if (value is List<int>) {
+        value = Uint8List.fromList(value);
       }
       return (type: 'bytes32', value: keccak256(value));
     }
@@ -206,6 +210,7 @@ class EIP712Encoder {
       return (type: 'bytes32', value: keccak256(encode(typesList, valuesList)));
     }
 
+    recognizeType(name, type, types.keys.toSet());
     return (type: type, value: value);
   }
 
@@ -236,6 +241,7 @@ class EIP712Encoder {
   Set<String> findTypeDependencies({
     required String primaryType,
     Set<String>? results,
+    Set<String>? stack,
   }) {
     final RegExp typeRegex = RegExp(r"^\w*", unicode: true);
     final match = typeRegex.stringMatch(primaryType);
@@ -244,16 +250,31 @@ class EIP712Encoder {
       throw ArgumentError('Invalid type: $primaryType');
     }
 
+    validateTypeName(match);
+
     results ??= <String>{};
+    stack ??= <String>{};
+
+    if (stack.contains(match)) {
+      throw ArgumentError('Circular type dependency detected on `$match`');
+    }
     if (results.contains(match) || !types.containsKey(match)) {
+      recognizeType("any", match, types.keys.toSet());
       return results;
     }
 
+    stack.add(match);
     results.add(match);
 
     for (final field in types[match]!) {
-      findTypeDependencies(primaryType: field.type, results: results);
+      findTypeDependencies(
+        primaryType: field.type,
+        results: results,
+        stack: stack,
+      );
     }
+
+    stack.remove(match);
     return results;
   }
 
@@ -276,5 +297,44 @@ class EIP712Encoder {
             : (BigInt.one << (bitSize - 1)) - BigInt.one;
 
     return (min, max, parsed);
+  }
+
+  void recognizeType(String name, String type, Set<String> definedStructs) {
+    bool isPrimitive(String t) {
+      if (t == 'address' || t == 'bool' || t == 'string' || t == 'bytes') {
+        return true;
+      }
+      // uint8, uint16, …, uint256
+      if (RegExp(r'^uint(8|16|32|64|128|256)$').hasMatch(t)) {
+        return true;
+      }
+      // int8, int16, …, int256
+      if (RegExp(r'^int(8|16|32|64|128|256)$').hasMatch(t)) {
+        return true;
+      }
+      // bytes1…bytes32
+      if (RegExp(r'^bytes([1-9]|1[12]|2[0-9]|3[0-2])$').hasMatch(t)) {
+        return true;
+      }
+      return false;
+    }
+
+    if (isPrimitive(type)) return;
+
+    if (definedStructs.contains(type)) return;
+
+    if (type.endsWith(']')) {
+      final base = type.substring(0, type.indexOf('['));
+      return recognizeType(name, base, definedStructs);
+    }
+
+    throw AssertionError('Unrecognized type `$type` for field `$name`');
+  }
+
+  void validateTypeName(String name) {
+    const pattern = r'^[A-Za-z_][A-Za-z0-9_]*$';
+    if (!RegExp(pattern).hasMatch(name)) {
+      throw ArgumentError('Invalid type name `$name`');
+    }
   }
 }

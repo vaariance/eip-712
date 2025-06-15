@@ -31,3 +31,15 @@ extension MessageTypesIndexing on MessageTypes {
     throw StateError('Unhandled Union case: $this');
   }
 }
+
+extension ObjectExtension on Object {
+  T as<T>() => this as T;
+
+  int get length => switch (this is List) {
+    true => (this as List).length,
+    false =>
+      throw Exception(
+        "The getter 'length' isn't defined for the class 'Object'",
+      ),
+  };
+}
