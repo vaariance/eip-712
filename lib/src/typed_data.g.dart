@@ -6,6 +6,37 @@ part of 'typed_data.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+TypedMessage _$TypedMessageFromJson(Map<String, dynamic> json) => TypedMessage(
+  types: (json['types'] as Map<String, dynamic>).map(
+    (k, e) => MapEntry(
+      k,
+      (e as List<dynamic>)
+          .map(
+            (e) => MessageTypeProperty.fromJson(
+              Map<String, String>.from(e as Map),
+            ),
+          )
+          .toList(),
+    ),
+  ),
+  primaryType: json['primaryType'] as String,
+  domain:
+      json['domain'] == null
+          ? null
+          : EIP712Domain.fromJson(json['domain'] as Map<String, dynamic>),
+  message: json['message'] as Map<String, dynamic>,
+);
+
+Map<String, dynamic> _$TypedMessageToJson(TypedMessage instance) =>
+    <String, dynamic>{
+      'types': instance.types.map(
+        (k, e) => MapEntry(k, e.map((e) => e.toJson()).toList()),
+      ),
+      'primaryType': instance.primaryType,
+      'domain': instance.domain?.toJson(),
+      'message': instance.message,
+    };
+
 _MessageTypeProperty _$MessageTypePropertyFromJson(Map<String, dynamic> json) =>
     _MessageTypeProperty(
       name: json['name'] as String,
@@ -15,38 +46,6 @@ _MessageTypeProperty _$MessageTypePropertyFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$MessageTypePropertyToJson(
   _MessageTypeProperty instance,
 ) => <String, dynamic>{'name': instance.name, 'type': instance.type};
-
-_TypedMessage _$TypedMessageFromJson(Map<String, dynamic> json) =>
-    _TypedMessage(
-      types: (json['types'] as Map<String, dynamic>).map(
-        (k, e) => MapEntry(
-          k,
-          (e as List<dynamic>)
-              .map(
-                (e) => MessageTypeProperty.fromJson(
-                  Map<String, String>.from(e as Map),
-                ),
-              )
-              .toList(),
-        ),
-      ),
-      primaryType: json['primaryType'] as String,
-      domain:
-          json['domain'] == null
-              ? null
-              : EIP712Domain.fromJson(json['domain'] as Map<String, dynamic>),
-      message: json['message'] as Map<String, dynamic>,
-    );
-
-Map<String, dynamic> _$TypedMessageToJson(_TypedMessage instance) =>
-    <String, dynamic>{
-      'types': instance.types.map(
-        (k, e) => MapEntry(k, e.map((e) => e.toJson()).toList()),
-      ),
-      'primaryType': instance.primaryType,
-      'domain': instance.domain?.toJson(),
-      'message': instance.message,
-    };
 
 _EIP712Domain _$EIP712DomainFromJson(Map<String, dynamic> json) =>
     _EIP712Domain(

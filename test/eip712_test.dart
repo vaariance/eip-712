@@ -11,7 +11,8 @@ import 'package:web3dart/web3dart.dart'
         hexToBytes,
         intToBytes,
         isValidSignature,
-        keccak256;
+        keccak256,
+        padUint8ListTo32;
 
 import '../example/eip712_example.dart' show rawTypedDataJson;
 
@@ -441,7 +442,10 @@ void main() {
         );
 
         expect(typeValuePair.type, equals('bytes32'));
-        expect(typeValuePair.value, equals(hexToBytes(fixed).padTo32Bytes()));
+        expect(
+          typeValuePair.value,
+          equals(padUint8ListTo32(hexToBytes(fixed))),
+        );
 
         final encoded = encode([typeValuePair.type], [typeValuePair.value]);
         final decoded = decode(['bytes32'], encoded);
@@ -457,7 +461,10 @@ void main() {
         );
 
         expect(typeValuePair.type, equals('bytes32'));
-        expect(typeValuePair.value, equals(intToBytes(fixed).padTo32Bytes()));
+        expect(
+          typeValuePair.value,
+          equals(padUint8ListTo32(intToBytes(fixed))),
+        );
 
         final encoded = encode([typeValuePair.type], [typeValuePair.value]);
         final decoded = decode(['bytes32'], encoded);

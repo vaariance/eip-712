@@ -93,24 +93,35 @@ abstract class MessageTypeProperty with _$MessageTypeProperty {
 
 /// Represents a complete EIP-712 typed message
 @freezed
-abstract class TypedMessage with _$TypedMessage {
-  @JsonSerializable(explicitToJson: true)
-  const factory TypedMessage({
-    /// The type definitions for the message
-    required Map<String, List<MessageTypeProperty>> types,
+@JsonSerializable(explicitToJson: true)
+class TypedMessage with _$TypedMessage {
+  /// The type definitions for the message
+  @override
+  final Map<String, List<MessageTypeProperty>> types;
 
-    /// The primary type being signed
-    required String primaryType,
+  /// The primary type being signed
+  @override
+  final String primaryType;
 
-    /// The domain separator data
-    required EIP712Domain? domain,
+  /// The domain separator data
+  @override
+  final EIP712Domain? domain;
 
-    /// The message data
-    required Map<String, dynamic> message,
-  }) = _TypedMessage;
+  /// The message data
+  @override
+  final Map<String, dynamic> message;
+
+  TypedMessage({
+    required this.types,
+    required this.primaryType,
+    this.domain,
+    required this.message,
+  });
 
   factory TypedMessage.fromJson(Map<String, Object?> json) =>
       _$TypedMessageFromJson(json);
+
+  Map<String, dynamic> toJson() => _$TypedMessageToJson(this);
 }
 
 /// Represents the domain separator for EIP-712 typed data

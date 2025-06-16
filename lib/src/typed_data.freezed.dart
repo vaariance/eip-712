@@ -156,19 +156,13 @@ as String,
 /// @nodoc
 mixin _$TypedMessage {
 
-/// The type definitions for the message
- Map<String, List<MessageTypeProperty>> get types;/// The primary type being signed
- String get primaryType;/// The domain separator data
- EIP712Domain? get domain;/// The message data
- Map<String, dynamic> get message;
+ Map<String, List<MessageTypeProperty>> get types; String get primaryType; EIP712Domain? get domain; Map<String, dynamic> get message;
 /// Create a copy of TypedMessage
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
 $TypedMessageCopyWith<TypedMessage> get copyWith => _$TypedMessageCopyWithImpl<TypedMessage>(this as TypedMessage, _$identity);
 
-  /// Serializes this TypedMessage to a JSON map.
-  Map<String, dynamic> toJson();
 
 
 @override
@@ -197,7 +191,7 @@ $Res call({
 });
 
 
-$EIP712DomainCopyWith<$Res>? get domain;
+
 
 }
 /// @nodoc
@@ -211,7 +205,7 @@ class _$TypedMessageCopyWithImpl<$Res>
 /// Create a copy of TypedMessage
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? types = null,Object? primaryType = null,Object? domain = freezed,Object? message = null,}) {
-  return _then(_self.copyWith(
+  return _then(TypedMessage(
 types: null == types ? _self.types : types // ignore: cast_nullable_to_non_nullable
 as Map<String, List<MessageTypeProperty>>,primaryType: null == primaryType ? _self.primaryType : primaryType // ignore: cast_nullable_to_non_nullable
 as String,domain: freezed == domain ? _self.domain : domain // ignore: cast_nullable_to_non_nullable
@@ -219,126 +213,9 @@ as EIP712Domain?,message: null == message ? _self.message : message // ignore: c
 as Map<String, dynamic>,
   ));
 }
-/// Create a copy of TypedMessage
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$EIP712DomainCopyWith<$Res>? get domain {
-    if (_self.domain == null) {
-    return null;
-  }
-
-  return $EIP712DomainCopyWith<$Res>(_self.domain!, (value) {
-    return _then(_self.copyWith(domain: value));
-  });
-}
-}
-
-
-/// @nodoc
-
-@JsonSerializable(explicitToJson: true)
-class _TypedMessage implements TypedMessage {
-  const _TypedMessage({required final  Map<String, List<MessageTypeProperty>> types, required this.primaryType, required this.domain, required final  Map<String, dynamic> message}): _types = types,_message = message;
-  factory _TypedMessage.fromJson(Map<String, dynamic> json) => _$TypedMessageFromJson(json);
-
-/// The type definitions for the message
- final  Map<String, List<MessageTypeProperty>> _types;
-/// The type definitions for the message
-@override Map<String, List<MessageTypeProperty>> get types {
-  if (_types is EqualUnmodifiableMapView) return _types;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableMapView(_types);
-}
-
-/// The primary type being signed
-@override final  String primaryType;
-/// The domain separator data
-@override final  EIP712Domain? domain;
-/// The message data
- final  Map<String, dynamic> _message;
-/// The message data
-@override Map<String, dynamic> get message {
-  if (_message is EqualUnmodifiableMapView) return _message;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableMapView(_message);
-}
-
-
-/// Create a copy of TypedMessage
-/// with the given fields replaced by the non-null parameter values.
-@override @JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-_$TypedMessageCopyWith<_TypedMessage> get copyWith => __$TypedMessageCopyWithImpl<_TypedMessage>(this, _$identity);
-
-@override
-Map<String, dynamic> toJson() {
-  return _$TypedMessageToJson(this, );
-}
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TypedMessage&&const DeepCollectionEquality().equals(other._types, _types)&&(identical(other.primaryType, primaryType) || other.primaryType == primaryType)&&(identical(other.domain, domain) || other.domain == domain)&&const DeepCollectionEquality().equals(other._message, _message));
-}
-
-@JsonKey(includeFromJson: false, includeToJson: false)
-@override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_types),primaryType,domain,const DeepCollectionEquality().hash(_message));
-
-@override
-String toString() {
-  return 'TypedMessage(types: $types, primaryType: $primaryType, domain: $domain, message: $message)';
-}
-
 
 }
 
-/// @nodoc
-abstract mixin class _$TypedMessageCopyWith<$Res> implements $TypedMessageCopyWith<$Res> {
-  factory _$TypedMessageCopyWith(_TypedMessage value, $Res Function(_TypedMessage) _then) = __$TypedMessageCopyWithImpl;
-@override @useResult
-$Res call({
- Map<String, List<MessageTypeProperty>> types, String primaryType, EIP712Domain? domain, Map<String, dynamic> message
-});
-
-
-@override $EIP712DomainCopyWith<$Res>? get domain;
-
-}
-/// @nodoc
-class __$TypedMessageCopyWithImpl<$Res>
-    implements _$TypedMessageCopyWith<$Res> {
-  __$TypedMessageCopyWithImpl(this._self, this._then);
-
-  final _TypedMessage _self;
-  final $Res Function(_TypedMessage) _then;
-
-/// Create a copy of TypedMessage
-/// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? types = null,Object? primaryType = null,Object? domain = freezed,Object? message = null,}) {
-  return _then(_TypedMessage(
-types: null == types ? _self._types : types // ignore: cast_nullable_to_non_nullable
-as Map<String, List<MessageTypeProperty>>,primaryType: null == primaryType ? _self.primaryType : primaryType // ignore: cast_nullable_to_non_nullable
-as String,domain: freezed == domain ? _self.domain : domain // ignore: cast_nullable_to_non_nullable
-as EIP712Domain?,message: null == message ? _self._message : message // ignore: cast_nullable_to_non_nullable
-as Map<String, dynamic>,
-  ));
-}
-
-/// Create a copy of TypedMessage
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$EIP712DomainCopyWith<$Res>? get domain {
-    if (_self.domain == null) {
-    return null;
-  }
-
-  return $EIP712DomainCopyWith<$Res>(_self.domain!, (value) {
-    return _then(_self.copyWith(domain: value));
-  });
-}
-}
 
 
 /// @nodoc

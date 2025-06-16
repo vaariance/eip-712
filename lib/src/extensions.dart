@@ -68,18 +68,3 @@ extension ObjectExtension on Object {
   ///   The length of the object
   int get length => as<dynamic>().length;
 }
-
-extension Padding on Uint8List {
-  /// Pads this [Uint8List] to 32 bytes by prepending zeros if necessary.
-  ///
-  /// Creates a new [Uint8List] of length 32 and copies the bytes from this list
-  /// into the end of the new list, effectively left-padding with zeros.
-  ///
-  /// Returns:
-  ///   A new [Uint8List] of length 32 containing the padded bytes
-  Uint8List padTo32Bytes() {
-    final Uint8List padded = Uint8List(32);
-    padded.setRange(32 - length, 32, this);
-    return padded;
-  }
-}

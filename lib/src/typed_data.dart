@@ -248,17 +248,17 @@ class EIP712Encoder {
         }
         return (
           type: 'bytes32',
-          value: intToBytes(BigInt.from(value)).padTo32Bytes(),
+          value: padUint8ListTo32(intToBytes(BigInt.from(value))),
         );
       } else if (value is BigInt) {
         value = intToBytes(value);
       } else if (isHex(value)) {
-        return (type: 'bytes32', value: hexToBytes(value).padTo32Bytes());
+        return (type: 'bytes32', value: padUint8ListTo32(hexToBytes(value)));
       }
       if (value is! List<int> || value is! Uint8List) {
         throw ArgumentError('Invalid value for field $name of type $type');
       }
-      return (type: 'bytes32', value: value.padTo32Bytes());
+      return (type: 'bytes32', value: padUint8ListTo32(value));
     }
 
     if ((type.startsWith('uint') || type.startsWith('int')) &&
