@@ -31,9 +31,7 @@ A Comprehensive and Strictly Typed Dart implementation of [EIP-712](https://eips
 
 Add this package to your `pubspec.yaml`:
 
-```yaml
-dependencies:
-  eip712: ^0.0.1
+```dart pub add eip712
 ```
 
 ## Usage
