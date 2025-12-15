@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/vaariance/eip-712/compare/v1.0.0...v1.0.1) (2025-12-15)
+
+
+### Bug Fixes
+
+* update package installation in readme and dependencies ([9a7aaef](https://github.com/vaariance/eip-712/commit/9a7aaef184aba5c704f2a0d7075a17a2a6771ef5))
+
 ## 1.0.0 (2025-06-15)
 
 
